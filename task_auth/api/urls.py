@@ -2,18 +2,16 @@ from django.urls import path, include
 from rest_framework.authtoken import views
 # from rest_framework import routers
 
-from task_auth.api.views import register_user, user_login, user_logout, current_user
+from task_auth.api.views import UserRegisterView, UserLoginView, UserLogoutView
 
 
 # router = routers.DefaultRouter()
 # router.register('user', UserViewSet)
 
 urlpatterns = [
-    # path("register/", UserRegisterView.as_view(), name="api_user_register"),
-    path("register/", register_user, name="api_user_register"),
-    path("login/", user_login, name="api_user_login"),
-    path("logout/", user_logout, name="api_user_logout"),
-    # path("current_user/", current_user)
+    path("register/", UserRegisterView.as_view(), name="api_user_register"),
+    path("login/", UserLoginView.as_view(), name="api_user_login"),
+    path("logout/", UserLogoutView.as_view(), name="api_user_logout"),
 ]
 
 # urlpatterns += [
