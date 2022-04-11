@@ -44,7 +44,7 @@ class Dev(Configuration):
         'django.contrib.staticfiles',
 
         'rest_framework',
-        'rest_framework.authtoken',
+        # 'rest_framework.authtoken',
 
         'task_auth',
     ]
@@ -177,7 +177,8 @@ class Dev(Configuration):
 
     REST_FRAMEWORK = {
         "DEFAULT_AUTHENTICATION_CLASSES": [
-            "rest_framework.authentication.TokenAuthentication",
+            "task_auth.authentication.TokenAuthentication",
+            # "rest_framework.authentication.TokenAuthentication",
         ],
         "DEFAULT_PERMISSION_CLASSES": [
             "rest_framework.permissions.IsAuthenticated",

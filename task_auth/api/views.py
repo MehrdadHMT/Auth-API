@@ -1,15 +1,14 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.authtoken.models import Token
+# from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import IntegrityError
-from django.contrib.auth import authenticate, login, logout
-import json
+from django.contrib.auth import login, logout
+from django.core.exceptions import ValidationError
 
 from .serializers import UserSerializer
-from task_auth.models import User
+from task_auth.models import User, Token
 
 
 class UserRegisterView(APIView):
@@ -19,13 +18,13 @@ class UserRegisterView(APIView):
 		data = {}
 		serializer = UserSerializer(data=request.data)
 		if serializer.is_valid():
-		    account = serializer.save()
-		    account.is_active = True
-		    account.save()
-		    token = Token.objects.get_or_create(user=account)[0].key            
-		    data["token"] = token
+			account = serializer.save()
+			account.is_active = True
+			account.save()
+			token = Token.objects.get_or_create(user=account)[0].key
+			data["token"] = token
 		else:
-		    data = serializer.errors
+			data = serializer.errors
 
 		return Response(data, status=status.HTTP_200_OK)
 
@@ -43,49 +42,47 @@ class UserLoginView(APIView):
 		print("password:", password)
 
 		try:
-			Account = User.objects.get(username=username)
-			print("Account:", Account)
-		    
+			account = User.objects.get(username=username)
+			print("Account:", account)
 		except BaseException as e:
-		    raise ValidationError({"400": f'{str(e)}'})
+			raise ValidationError({"400": f'{str(e)}'})
 
+		if not account.check_password(password):
+			raise ValidationError({"message": "Incorrect Login credentials"})
 
-		if not Account.check_password(password):
-		    raise ValidationError({"message": "Incorrect Login credentials"})
+		if account:
+			if account.is_active:
+				print("Request user:", request.user)
+				print("IsAuthenticated before login:", account.is_authenticated)
 
-		if Account:
-		    if Account.is_active:
-		    	print("Request user:", request.user)
-		    	print("IsAuthenticated before login:", Account.is_authenticated)
+				# try:
+				# 	account.auth_token.delete()
+				# 	print("Old token deleted ...")
+				# except:
+				# 	print("User has no auth_token!")
 
-		    	try:
-		    		Account.auth_token.delete()
-		    		print("Old token deleted ...")
-		    	except:
-		    		print("User has no auth_token!")
+				login(request, account)
+				print("Is Authenticated?", account.is_authenticated)
+				print("Request user:", request.user)
 
-		    	login(request, Account)
-		    	print("Is Authenticated?", Account.is_authenticated)
-		    	print("Request user:", request.user)
+				token = Token.objects.create(user=account).key
+				print("New token:", token)
+				data["token"] = token
 
-		    	token = Token.objects.create(user=Account).key
-		    	print("New token:", token)
-		    	data["token"] = token
-
-		    	return Response(data)
-
-		    else:
-		        raise ValidationError({"400": f'Account not active'})
+				return Response(data)
+			else:
+				raise ValidationError({"400": f'Account not active'})
 
 		else:
-		    raise ValidationError({"400": f'Account doesnt exist'})
+			raise ValidationError({"400": f'Account doesnt exist'})
 
 
 class UserLogoutView(APIView):
 	permission_classes = [IsAuthenticated]
 
-	def get(self,request, format=None):
-		request.user.auth_token.delete()
+	def get(self, request, format=None):
+		# print("Token Key:", request.auth.key)
+		request.user.auth_tokens.get(key=request.auth.key).delete()
 
 		logout(request)
 
