@@ -1,13 +1,15 @@
 from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import login, logout
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
 
-from .serializers import UserSerializer
+from user_agent_middleware.utils import get_user_agent
+from .serializers import UserSerializer, TokenSerializer
 from task_auth.models import User, Token
 
 
@@ -16,15 +18,26 @@ class UserRegisterView(APIView):
 
 	def post(self, request, format=None):
 		data = {}
-		serializer = UserSerializer(data=request.data)
-		if serializer.is_valid():
-			account = serializer.save()
+		user_serializer = UserSerializer(data=request.data)
+		if user_serializer.is_valid():
+			account = user_serializer.save()
 			account.is_active = True
 			account.save()
-			token = Token.objects.get_or_create(user=account)[0].key
+
+			user_agent = str(request.user_agent)
+			# token_data = {
+			# 	"user": user_serializer.data,
+			# 	"user_agent": str(user_agent)
+			# }
+			# token_serializer = TokenSerializer(data=token_data)
+
+			# if token_serializer.is_valid(raise_exception=True):
+			# 	token = token_serializer.save()
+			# 	data["token"] = token_serializer.data["user_agent"]
+			token = Token.objects.get_or_create(user=account, user_agent=user_agent)[0].key
 			data["token"] = token
 		else:
-			data = serializer.errors
+			data = user_serializer.errors
 
 		return Response(data, status=status.HTTP_200_OK)
 
@@ -41,40 +54,28 @@ class UserLoginView(APIView):
 		password = req_data['password']
 		print("password:", password)
 
-		try:
-			account = User.objects.get(username=username)
-			print("Account:", account)
-		except BaseException as e:
-			raise ValidationError({"400": f'{str(e)}'})
+		account = get_object_or_404(User, username=username)
 
 		if not account.check_password(password):
-			raise ValidationError({"message": "Incorrect Login credentials"})
+			# raise ValidationError({"message": "Incorrect Login credentials"})
+			return Response({"message": "Incorrect Login credentials"}, status=status.HTTP_403_FORBIDDEN)
 
-		if account:
-			if account.is_active:
-				print("Request user:", request.user)
-				print("IsAuthenticated before login:", account.is_authenticated)
+		if account.is_active:
+			print("Request user:", request.user)
+			print("IsAuthenticated before login:", account.is_authenticated)
 
-				# try:
-				# 	account.auth_token.delete()
-				# 	print("Old token deleted ...")
-				# except:
-				# 	print("User has no auth_token!")
+			login(request, account)
+			print("Is Authenticated?", account.is_authenticated)
+			print("Request user:", request.user)
 
-				login(request, account)
-				print("Is Authenticated?", account.is_authenticated)
-				print("Request user:", request.user)
+			user_agent = str(request.user_agent)
+			token = Token.objects.create(user=account, user_agent=user_agent).key
+			print("New token:", token)
+			data["token"] = token
 
-				token = Token.objects.create(user=account).key
-				print("New token:", token)
-				data["token"] = token
-
-				return Response(data)
-			else:
-				raise ValidationError({"400": f'Account not active'})
-
+			return Response(data)
 		else:
-			raise ValidationError({"400": f'Account doesnt exist'})
+			raise ValidationError({"400": f'Account not active'})
 
 
 class UserLogoutView(APIView):
@@ -85,6 +86,34 @@ class UserLogoutView(APIView):
 		request.user.auth_tokens.get(key=request.auth.key).delete()
 
 		logout(request)
+
+		return Response(status=status.HTTP_200_OK)
+
+
+class TokensListView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request, format=None):
+		data = {}
+		user = request.user
+		user_tokens = Token.objects.filter(user=user)
+
+		for token in user_tokens:
+			data.update({str(token.id): token.user_agent})
+
+		return Response(data=data)
+
+
+class KillTokens(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request, format=None):
+		tokens_id = request.data['token_ids']
+
+		try:
+			Token.objects.filter(id__in=tokens_id).delete()
+		except BaseException as e:
+			raise ValidationError({"400": f'{str(e)}'})
 
 		return Response(status=status.HTTP_200_OK)
 

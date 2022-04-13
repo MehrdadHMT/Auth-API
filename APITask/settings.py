@@ -45,7 +45,7 @@ class Dev(Configuration):
 
         'rest_framework',
         # 'rest_framework.authtoken',
-
+        'user_agent_middleware',
         'task_auth',
     ]
 
@@ -57,6 +57,8 @@ class Dev(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+        'user_agent_middleware.middleware.UserAgentMiddleware',
     ]
 
     ROOT_URLCONF = 'APITask.urls'

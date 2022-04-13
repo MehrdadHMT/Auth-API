@@ -2,7 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 
-from task_auth.models import User, phone_regex_validator
+from task_auth.models import User, phone_regex_validator, Token
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,3 +36,11 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Token
+        fields = ['id', 'user', 'user_agent']
