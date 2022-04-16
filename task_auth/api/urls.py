@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.authtoken import views
 # from rest_framework import routers
 
-from task_auth.api.views import UserRegisterView, UserLoginView, UserLogoutView, TokensListView, KillTokens
+from task_auth.api.views import UserRegisterView, UserLoginView, UserLogoutView, TokensListView, KillTokens, SendOTP
 
 
 # router = routers.DefaultRouter()
@@ -14,6 +14,7 @@ urlpatterns = [
     path("logout/", UserLogoutView.as_view(), name="api_user_logout"),
     path("list-tokens/", TokensListView.as_view(), name="api_list_tokens"),
     path("kill-tokens/", KillTokens.as_view(), name="api_kill_tokens"),
+    path("send-otp/", SendOTP.as_view(), name="api_send_otp"),
 ]
 
 # urlpatterns += [

@@ -28,6 +28,10 @@ def save_ua_in_db(request):
     except AttributeError as e:
         raise(e)
 
-    token = Token.objects.get(key=token_key)
+    try:
+        token = Token.objects.get(key=token_key)
+    except Token.DoesNotExist as e:
+        raise(e)
+
     token.user_agent = user_agent
     token.save()

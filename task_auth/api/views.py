@@ -1,4 +1,3 @@
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,17 +5,16 @@ from rest_framework import status
 from django.contrib.auth import login, logout
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
 
-from user_agent_middleware.utils import get_user_agent
-from .serializers import UserSerializer, TokenSerializer
+from .serializers import UserSerializer
 from task_auth.models import User, Token
+from task_auth.operators import client_code
 
 
 class UserRegisterView(APIView):
 	permission_classes = [AllowAny]
 
-	def post(self, request, format=None):
+	def post(self, request):
 		data = {}
 		user_serializer = UserSerializer(data=request.data)
 		if user_serializer.is_valid():
@@ -45,7 +43,7 @@ class UserRegisterView(APIView):
 class UserLoginView(APIView):
 	permission_classes = [AllowAny]
 
-	def post(self, request, format=None):
+	def post(self, request):
 		print("request.data:", request.data)
 		data = {}
 		req_data = request.data
@@ -81,7 +79,7 @@ class UserLoginView(APIView):
 class UserLogoutView(APIView):
 	permission_classes = [IsAuthenticated]
 
-	def get(self, request, format=None):
+	def get(self, request):
 		# print("Token Key:", request.auth.key)
 		request.user.auth_tokens.get(key=request.auth.key).delete()
 
@@ -93,7 +91,7 @@ class UserLogoutView(APIView):
 class TokensListView(APIView):
 	permission_classes = [IsAuthenticated]
 
-	def get(self, request, format=None):
+	def get(self, request):
 		data = {}
 		user = request.user
 		user_tokens = Token.objects.filter(user=user)
@@ -107,7 +105,7 @@ class TokensListView(APIView):
 class KillTokens(APIView):
 	permission_classes = [IsAuthenticated]
 
-	def post(self, request, format=None):
+	def post(self, request):
 		tokens_id = request.data['token_ids']
 
 		try:
@@ -118,10 +116,30 @@ class KillTokens(APIView):
 		return Response(status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def current_user(request):
-	
-	user = request.user	
-	print("User:", user)
-	return Response(user)
+class SendOTP(APIView):
+	permission_classes = [AllowAny]
+
+	def post(self, request):
+		# phone_number = str(request.user.phone_number)
+		phone_number = request.data.get('phone_number')
+		client_code(phone_number)
+
+		return Response(status=status.HTTP_200_OK)
+
+
+class OTPValidation(APIView):
+	permission_classes = [AllowAny]
+
+	def post(self, request):
+		data = request.data
+		phone_number = data.get('phone_number')
+		
+
+
+# @api_view(["GET"])
+# @permission_classes([AllowAny])
+# def current_user(request):
+#
+# 	user = request.user
+# 	print("User:", user)
+# 	return Response(user)
