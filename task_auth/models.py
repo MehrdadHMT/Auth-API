@@ -11,6 +11,7 @@ phone_regex_validator = RegexValidator(regex=r"^(?:0|98|\+98|\+980|0098|098|0098
 
 class User(AbstractUser):
     phone_number = models.CharField(validators=[phone_regex_validator], unique=True, max_length=11)
+    has_valid_phone_number = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = ["phone_number"]
 
