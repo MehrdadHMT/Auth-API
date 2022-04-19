@@ -74,6 +74,10 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class ForgotPasswordSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(
+        required=True,
+        validators=[phone_regex_validator]
+    )
     otp_code = serializers.CharField(required=True, validators=[otp_regex_validator])
     new_pass = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     new_pass_repeat = serializers.CharField(write_only=True, required=True, validators=[validate_password])

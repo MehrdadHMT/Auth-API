@@ -177,11 +177,12 @@ class ForgotPasswordView(APIView):
 
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
-        user = request.user
+
         if serializer.is_valid():
-            phone_number = user.phone_number
+            phone_number = serializer.validated_data.get('phone_number')
             otp_code = cache.get(phone_number)
             if otp_code == serializer.validated_data.get("otp_code"):
+                user = User.objects.get(phone_number=phone_number)
                 user.set_password(serializer.validated_data.get('new_pass'))
                 user.save()
 
