@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
-from user_agents import parse
+from rest_framework.response import Response
+from rest_framework import status
 
 from task_auth.models import Token
 
@@ -25,13 +26,13 @@ def save_ua_in_db(request):
     user_agent = str(request.user_agent)
     try:
         token_key = request.headers.get('Authorization').split()[-1]
-    except AttributeError as e:
-        raise(e)
+    except AttributeError:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     try:
         token = Token.objects.get(key=token_key)
-    except Token.DoesNotExist as e:
-        raise(e)
+    except Token.DoesNotExist:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     token.user_agent = user_agent
     token.save()

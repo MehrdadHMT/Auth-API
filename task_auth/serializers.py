@@ -1,14 +1,10 @@
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework.validators import UniqueValidator
-from django.core.validators import RegexValidator
 from rest_framework import serializers
 
 from task_auth.models import User, phone_regex_validator
-
-
-otp_regex_validator = RegexValidator(regex=r"[0-9a-zA-Z]{6}", message="The OTP code must be in 6 characters, containing"
-                                                                      "lowercase or uppercase letters or digits")
+from .validators import otp_regex_validator
 
 
 class PhoneNumberSerializer(serializers.Serializer):
@@ -30,9 +26,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["username", "password", "password2", "phone_number"]
-        extra_kwargs = {
-            'phone_number': {'required': True},            
-        }
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -58,7 +51,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class TokensListSerializer(serializers.Serializer):
-    token_ids = serializers.ListField(child=serializers.IntegerField(), required=True)
+    token_ids = serializers.ListField(child=serializers.IntegerField(), required=True, allow_empty=False)
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -67,8 +60,11 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_pass_repeat = serializers.CharField(write_only=True, required=True, validators=[validate_password])
 
     def validate(self, attrs):
+        if attrs['new_pass'] == attrs['old_pass']:
+            raise serializers.ValidationError({"Same password": "New Password and old password must not be the same."})
+
         if attrs['new_pass'] != attrs['new_pass_repeat']:
-            raise serializers.ValidationError({"password": "New Password fields didn't match."})
+            raise serializers.ValidationError({"Confirmation error": "New Password fields didn't match."})
 
         return attrs
 
@@ -87,12 +83,3 @@ class ForgotPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"password": "New Password fields didn't match."})
 
         return attrs
-
-
-# class TokenSerializer(serializers.ModelSerializer):
-#     id = serializers.IntegerField(required=False)
-#     user = UserSerializer(read_only=True)
-#
-#     class Meta:
-#         model = Token
-#         fields = ['id', 'user', 'user_agent']

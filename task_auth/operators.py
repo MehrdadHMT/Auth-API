@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 def generate_otp():
-    # Declare a string variable which stores all string
     string = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     otp = ""
     length = len(string)
@@ -30,6 +29,7 @@ class OTPCreator(ABC):
 
     def __init__(self, otp_code):
         self.otp_code = otp_code
+
     @abstractmethod
     def factory_method(self):
         pass
@@ -137,9 +137,3 @@ def client_code(ph_num: str) -> None:
 if __name__ == "__main__":
     phone_number = "09126057206"
     client_code(phone_number)
-# print("App: Launched with the ConcreteCreator1.")
-# client_code(ConcreteCreator1())
-# print("\n")
-#
-# print("App: Launched with the ConcreteCreator2.")
-# client_code(ConcreteCreator2())
