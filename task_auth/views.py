@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import login, logout
-from django.core.exceptions import ValidationError
 from django.core.cache import cache
 
 from .serializers import (UserSerializer, PhoneNumberSerializer, OTPSerializer, LoginSerializer,
