@@ -9,16 +9,15 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import os
 
 from pathlib import Path
 from configurations import Configuration, values
 
 
-
 class Dev(Configuration):
     # Build paths inside the project like this: BASE_DIR / 'subdir'.
     BASE_DIR = Path(__file__).resolve().parent.parent
-
 
     # Quick-start development settings - unsuitable for production
     # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -32,7 +31,6 @@ class Dev(Configuration):
     ALLOWED_HOSTS = values.ListValue(['localhost', '0.0.0.0', '127.0.0.1'])    
 
     AUTH_USER_MODEL = "task_auth.User"
-
 
     # Application definition
     INSTALLED_APPS = [
@@ -81,12 +79,20 @@ class Dev(Configuration):
 
     WSGI_APPLICATION = 'APITask.wsgi.application'
 
-
     # Database
     # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-    DATABASES = values.DatabaseURLValue(f"sqlite:///{BASE_DIR}/db.sqlite3")
-
+    # DATABASES = values.DatabaseURLValue(f"sqlite:///{BASE_DIR}/db.sqlite3")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_NAME'),
+            'USER': os.environ.get('POSTGRES_USER'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+            'HOST': 'db',
+            'PORT': 5432,
+        }
+    }
 
     # Password validation
     # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -109,10 +115,9 @@ class Dev(Configuration):
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379',
+            'LOCATION': 'redis://redis:6379',
         }
     }
-
 
     # Internationalization
     # https://docs.djangoproject.com/en/3.2/topics/i18n/
@@ -126,7 +131,6 @@ class Dev(Configuration):
     USE_L10N = True
 
     USE_TZ = True
-
 
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/3.2/howto/static-files/
